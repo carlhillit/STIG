@@ -18,16 +18,17 @@ $ErrorActionPreference = 'Continue'
 
 $OUs =  Get-ChildItem AD:\$OrgOU -Recurse | Where-Object {$_.ObjectClass -eq "organizationalUnit"}
 
-$report = @()
+$report = New-Object System.Collections.ArrayList
 
 
 ForEach ($OU in $OUs) {
-    $report += Get-Acl -Path "AD:\$OU" |
+    $acl = Get-Acl -Path "AD:\$OU" |
      Select-Object -ExpandProperty Access | 
      Select-Object @{name='organizationalUnit';expression={$OU}}, `
                    @{name='objectTypeName';expression={if ($_.objectType.ToString() -eq '00000000-0000-0000-0000-000000000000') {'All'} Else {$schemaIDGUID.Item($_.objectType)}}}, `
                    @{name='inheritedObjectTypeName';expression={$schemaIDGUID.Item($_.inheritedObjectType)}}, `
                    *
+    $report.Add($acl)
 }
 
 # Dump the raw report out to a CSV file for analysis in Excel.
